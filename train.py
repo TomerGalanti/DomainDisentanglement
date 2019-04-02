@@ -196,7 +196,7 @@ if __name__ == '__main__':
     parser.add_argument('--progress_iter', type=int, default=100)
     parser.add_argument('--display_iter', type=int, default=1000)
     parser.add_argument('--log_iter', type=int, default=100)
-    parser.add_argument('--save_iter', type=int, default=5000)
+    parser.add_argument('--save_iter', type=int, default=1000)
     parser.add_argument('--load', default='')
     parser.add_argument('--zeroweight', type=float, default=1.0)
     parser.add_argument('--reconweight', type=float, default=1.0)
