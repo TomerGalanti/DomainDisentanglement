@@ -132,7 +132,7 @@ if args.resume:
 if args.resume_encoders == 'True':
     # Load checkpoint.
     print('==> Resuming from checkpoint of encodings..')
-    save_file = os.path.join(args.load, 'checkpoint'+str(iter))
+    save_file = os.path.join(args.load, 'checkpoint'+str(args.iter))
     _iter = load_model_for_eval(save_file, e_common, e_separate_A, e_separate_B, decoder, )
 
 
