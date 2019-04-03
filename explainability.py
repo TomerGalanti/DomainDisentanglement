@@ -71,8 +71,8 @@ testA, testB = get_test_dataset(args)
 testloaderA = torch.utils.data.DataLoader(testA, batch_size=args.bs, shuffle=False, num_workers=2)
 testloaderB = torch.utils.data.DataLoader(testB, batch_size=args.bs, shuffle=False, num_workers=2)
 
-print(len(testloaderA))
-print(len(trainloaderA))
+print(len(testA))
+print(len(trainA))
 
 #pdb.set_trace()
 
