@@ -72,7 +72,7 @@ testloaderA = torch.utils.data.DataLoader(testA, batch_size=args.bs, shuffle=Fal
 testloaderB = torch.utils.data.DataLoader(testB, batch_size=args.bs, shuffle=False, num_workers=2)
 
 print(len(testloaderA))
-
+print(len(trainloaderA))
 
 #pdb.set_trace()
 
