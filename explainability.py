@@ -13,7 +13,7 @@ import argparse
 from models import Classifier2, Classifier, E_common, E_separate_A, E_separate_B, Decoder
 from utils_classifier import progress_bar
 from utils import get_train_dataset, get_test_dataset
-from utils import save_imgs, save_model, load_model_for_eval, save_stripped_imgs
+from utils import save_imgs, save_model, load_model_for_eval, save_stripped_imgs, save_imgs_explainability
 
 import pdb
 
@@ -243,6 +243,9 @@ def test(epoch):
         torch.save(state, './classifier/' + args.root + '/checkpoint/ckpt.t7')
         best_acc = acc
 
+    save_imgs_explainability(args, net, e_common, e_separate_A, e_separate_B, decoder, epoch, A=True)
+    save_imgs_explainability(args, net, e_common, e_separate_A, e_separate_B, decoder, epoch, A=True)
+
 
 def test_on_data(params):
     comp_transform = transforms.Compose([
@@ -288,4 +291,5 @@ else:
         train(epoch)
         print('test')
         test(epoch)
+
 

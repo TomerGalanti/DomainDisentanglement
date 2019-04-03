@@ -39,6 +39,77 @@ def get_train_dataset(args):
     return domA_train, domB_train
 
 
+def save_imgs_explainability(args, classif, e_common, e_separate_A, e_separate_B, decoder, epoch, A=True):
+    ''' saves images of reconstruction of opposite label'''
+    test_domA, test_domB = get_test_imgs(args)
+
+    list_of_imgs = []
+    k = 0
+    i = 0
+    exps = []
+
+    if A:
+        test_dom = test_domA
+        label = 1
+    else:
+        test_dom = test_domB
+        label = 0
+
+    while k < args.num_display:
+        with torch.no_grad():
+            if classif(test_dom[i].unsqueeze(0)) != label:
+                list_of_imgs += [test_dom[i]]
+                k += 1
+            i += 1
+
+
+    for i in range(k):
+        with torch.no_grad():
+            filler = list_of_imgs[i].unsqueeze(0).clone()
+            exps.append(filler.fill_(0))
+            exps.append(list_of_imgs[i].unsqueeze(0))
+
+    zero_encoding = torch.full((1, args.sep * (args.resize
+                                               // 64) * (args.resize // 64)), 0)
+    if torch.cuda.is_available():
+        zero_encoding = zero_encoding.cuda()
+
+    for i in range(k):
+        common = e_common(list_of_imgs[i].unsqueeze(0))
+        separate_A = e_separate_A(list_of_imgs[i].unsqueeze(0))
+        separate_B = e_separate_B(list_of_imgs[i].unsqueeze(0))
+
+        A_encoding = torch.cat([common, separate_A, zero_encoding], dim=1)
+        A_decoding = decoder(A_encoding)
+        exps.append(A_decoding)
+
+    for i in range(k):
+        common = e_common(list_of_imgs[i].unsqueeze(0))
+        separate_A = e_separate_A(list_of_imgs[i].unsqueeze(0))
+        separate_B = e_separate_B(list_of_imgs[i].unsqueeze(0))
+
+        B_encoding = torch.cat([common, zero_encoding, separate_B], dim=1)
+        B_decoding = decoder(B_encoding)
+        exps.append(B_decoding)
+
+
+    with torch.no_grad():
+        exps = torch.cat(exps, 0)
+
+        if A:
+            vutils.save_image(exps,
+                              '%s/experiments_%06d_%d-A.png' % (args.out,
+                                                                   epoch,
+                                                                   k),
+                              normalize=True, nrow=k + 1)
+        else:
+            vutils.save_image(exps,
+                              '%s/experiments_%06d_%d-B.png' % (args.out,
+                                                                   epoch,
+                                                                   k),
+                              normalize=True, nrow=k + 1)
+
+
 def save_imgs(args, e_common, e_separate_A, e_separate_B, decoder, iters, BtoA=True, num_offsets=1):
     ''' saves images of translation B -> A or A -> B'''
     test_domA, test_domB = get_test_imgs(args)
