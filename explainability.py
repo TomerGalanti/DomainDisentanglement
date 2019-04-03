@@ -37,6 +37,7 @@ parser.add_argument('--display_iter', type=int, default=1000)
 parser.add_argument('--log_iter', type=int, default=100)
 parser.add_argument('--save_iter', type=int, default=10000)
 parser.add_argument('--load', default='')
+parser.add_argument('--iter', default=10000, type=int)
 parser.add_argument('--num_display', type=int, default=12)
 parser.add_argument('--zeroweight', type=float, default=1.0)
 parser.add_argument('--reconweight', type=float, default=0.01)
@@ -131,7 +132,7 @@ if args.resume:
 if args.resume_encoders == 'True':
     # Load checkpoint.
     print('==> Resuming from checkpoint of encodings..')
-    save_file = os.path.join(args.load, 'checkpoint')
+    save_file = os.path.join(args.load, 'checkpoint'+str(iter))
     _iter = load_model_for_eval(save_file, e_common, e_separate_A, e_separate_B, decoder, )
 
 
