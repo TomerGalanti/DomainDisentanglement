@@ -64,7 +64,7 @@ def save_imgs_explainability(args, classif, e_common, e_separate_A, e_separate_B
             if is_common:
                 common = e_common(test_dom[i].unsqueeze(0))
             else:
-                common = torch.full((1, (512 - 2 * args.sep) * (args.resize // 64) * (args.resize // 64)), 0).to(device)
+                common = torch.full((1, (512 - 2 * args.sep) * (args.resize // 32) * (args.resize // 32)), 0).to(device)
             separate_A = e_separate_A(test_dom[i].unsqueeze(0))
             separate_B = e_separate_B(test_dom[i].unsqueeze(0))
             encoding = torch.cat([common, separate_A, separate_B], dim=1)
@@ -87,7 +87,7 @@ def save_imgs_explainability(args, classif, e_common, e_separate_A, e_separate_B
         with torch.no_grad():
             exps.append(list_of_imgs[i].unsqueeze(0))
 
-    zero_encoding = torch.full((1, args.sep * (args.resize // 64) * (args.resize // 64)), 0)
+    zero_encoding = torch.full((1, args.sep * (args.resize // 32) * (args.resize // 32)), 0)
     if torch.cuda.is_available():
         zero_encoding = zero_encoding.cuda()
 
@@ -154,7 +154,7 @@ def save_imgs(args, e_common, e_separate_A, e_separate_B, decoder, iters, BtoA=T
                     with torch.no_grad():
                         common_B = e_common(test_domB[j].unsqueeze(0))
                         zero_encoding = torch.full((1, args.sep * (args.resize
-                                                                   // 64) * (args.resize // 64)), 0)
+                                                                   // 32) * (args.resize // 32)), 0)
                         if torch.cuda.is_available():
                             zero_encoding = zero_encoding.cuda()
 
@@ -169,7 +169,7 @@ def save_imgs(args, e_common, e_separate_A, e_separate_B, decoder, iters, BtoA=T
                     with torch.no_grad():
                         common_A = e_common(test_domA[j].unsqueeze(0))
                         zero_encoding = torch.full((1, args.sep * (args.resize
-                                                                   // 64) * (args.resize // 64)), 0)
+                                                                   // 32) * (args.resize // 32)), 0)
                         if torch.cuda.is_available():
                             zero_encoding = zero_encoding.cuda()
 
@@ -410,7 +410,7 @@ class ImageFolder(data.Dataset):
 def save_stripped_imgs(args, e_common, e_separate_A, e_separate_B, decoder, iters, A=True):
     test_domA, test_domB = get_test_imgs(args)
     exps = []
-    zero_encoding = torch.full((1, args.sep * (args.resize // 64) * (args.resize // 64)), 0)
+    zero_encoding = torch.full((1, args.sep * (args.resize // 32) * (args.resize // 32)), 0)
     # zero_encoding = torch.full((1, 12, 32, 32), 0)
     if torch.cuda.is_available():
         zero_encoding = zero_encoding.cuda()
@@ -461,7 +461,7 @@ def save_chosen_imgs_removal(args, e_common, decoder, iters, list, BtoA=True):
             with torch.no_grad():
                 common_B = e_common(test_domB[i].unsqueeze(0))
                 zero_encoding = torch.full((1, args.sep * (args.resize
-                                                           // 64) * (args.resize // 64)), 0)
+                                                           // 32) * (args.resize // 32)), 0)
                 if torch.cuda.is_available():
                     zero_encoding = zero_encoding.cuda()
 
@@ -473,7 +473,7 @@ def save_chosen_imgs_removal(args, e_common, decoder, iters, list, BtoA=True):
             with torch.no_grad():
                 common_A = e_common(test_domA[i].unsqueeze(0))
                 zero_encoding = torch.full((1, args.sep * (args.resize
-                                                           // 64) * (args.resize // 64)), 0)
+                                                           // 32) * (args.resize // 32)), 0)
                 if torch.cuda.is_available():
                     zero_encoding = zero_encoding.cuda()
 
@@ -518,7 +518,7 @@ def save_chosen_imgs(args, e_common, e_separate_A, e_separate_B, decoder, iters,
                 with torch.no_grad():
                     common_B = e_common(test_domB[j].unsqueeze(0))
                     zero_encoding = torch.full((1, args.sep * (args.resize
-                                                               // 64) * (args.resize // 64)), 0)
+                                                               // 32) * (args.resize // 32)), 0)
                     if torch.cuda.is_available():
                         zero_encoding = zero_encoding.cuda()
 
@@ -533,7 +533,7 @@ def save_chosen_imgs(args, e_common, e_separate_A, e_separate_B, decoder, iters,
                 with torch.no_grad():
                     common_A = e_common(test_domA[j].unsqueeze(0))
                     zero_encoding = torch.full((1, args.sep * (args.resize
-                                                               // 64) * (args.resize // 64)), 0)
+                                                               // 32) * (args.resize // 32)), 0)
                     if torch.cuda.is_available():
                         zero_encoding = zero_encoding.cuda()
 

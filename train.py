@@ -19,15 +19,15 @@ def train(args):
     _iter = 0
     domA_train, domB_train = get_train_dataset(args)
 
-    e_common = E_common(args.sep, args.resize // 64)
-    e_separate_A = E_separate_A(args.sep, args.resize // 64)
-    e_separate_B = E_separate_B(args.sep, args.resize // 64)
-    decoder = Decoder(args.resize // 64)
-    disc = Disc(args.sep, args.resize // 64)
+    e_common = E_common(args.sep, args.resize // 32)
+    e_separate_A = E_separate_A(args.sep, args.resize // 32)
+    e_separate_B = E_separate_B(args.sep, args.resize // 32)
+    decoder = Decoder(args.resize // 32)
+    disc = Disc(args.sep, args.resize // 32)
 
     A_label = torch.full((args.bs,), 1)
     B_label = torch.full((args.bs,), 0)
-    zero_encoding = torch.full((args.bs, args.sep * (args.resize // 64) * (args.resize // 64)), 0)
+    zero_encoding = torch.full((args.bs, args.sep * (args.resize // 32) * (args.resize // 32)), 0)
 
     l1 = nn.L1Loss()
     bce = nn.BCELoss()
@@ -79,9 +79,6 @@ def train(args):
 
             if domA_img.size(0) != args.bs or domB_img.size(0) != args.bs:
                 break
-
-            domA_img = Variable(domA_img)
-            domB_img = Variable(domB_img)
 
             if torch.cuda.is_available():
                 domA_img = domA_img.cuda()
