@@ -39,14 +39,15 @@ def get_train_dataset(args):
     return domA_train, domB_train
 
 
-def save_imgs_explainability(args, classif, e_common, e_separate_A, e_separate_B, decoder, epoch, A=True):
+def save_imgs_explainability(args, classif, e_common, e_separate_A, e_separate_B, decoder, epoch, device, A=True, correct=False, is_common=False):
     ''' saves images of reconstruction of opposite label'''
-    test_domA, test_domB = get_test_imgs(args)
+    test_domA, test_domB = get_test_imgs(args, 1000)
 
     list_of_imgs = []
     k = 0
     i = 0
     exps = []
+    corr = ''
 
     if A:
         test_dom = test_domA
@@ -55,22 +56,38 @@ def save_imgs_explainability(args, classif, e_common, e_separate_A, e_separate_B
         test_dom = test_domB
         label = 0
 
-    while k < args.num_display:
+    if correct: corr = 'correct'
+    else: corr = 'wrong'
+
+    while k <= args.num_display+1 and i < len(test_dom):
         with torch.no_grad():
-            if classif(test_dom[i].unsqueeze(0)) != label:
-                list_of_imgs += [test_dom[i]]
-                k += 1
+            if is_common:
+                common = e_common(test_dom[i].unsqueeze(0))
+            else:
+                common = torch.full((1, (512 - 2 * args.sep) * (args.resize // 64) * (args.resize // 64)), 0).to(device)
+            separate_A = e_separate_A(test_dom[i].unsqueeze(0))
+            separate_B = e_separate_B(test_dom[i].unsqueeze(0))
+            encoding = torch.cat([common, separate_A, separate_B], dim=1)
+            outputs = classif(encoding)
+            value, predicted = outputs.max(1)
+
+            if correct:
+                if (predicted.data.tolist()[0] == label):
+                    list_of_imgs += [test_dom[i]]
+                    k += 1
+            else:
+                if (predicted.data.tolist()[0] != label and value.data.tolist()[0] > 0.65):
+                    list_of_imgs += [test_dom[i]]
+                    k += 1
             i += 1
 
+    if i == len(test_dom): return
 
     for i in range(k):
         with torch.no_grad():
-            filler = list_of_imgs[i].unsqueeze(0).clone()
-            exps.append(filler.fill_(0))
             exps.append(list_of_imgs[i].unsqueeze(0))
 
-    zero_encoding = torch.full((1, args.sep * (args.resize
-                                               // 64) * (args.resize // 64)), 0)
+    zero_encoding = torch.full((1, args.sep * (args.resize // 64) * (args.resize // 64)), 0)
     if torch.cuda.is_available():
         zero_encoding = zero_encoding.cuda()
 
@@ -80,7 +97,7 @@ def save_imgs_explainability(args, classif, e_common, e_separate_A, e_separate_B
         separate_B = e_separate_B(list_of_imgs[i].unsqueeze(0))
 
         A_encoding = torch.cat([common, separate_A, zero_encoding], dim=1)
-        A_decoding = decoder(A_encoding)
+        A_decoding = decoder(A_encoding).detach()
         exps.append(A_decoding)
 
     for i in range(k):
@@ -89,7 +106,7 @@ def save_imgs_explainability(args, classif, e_common, e_separate_A, e_separate_B
         separate_B = e_separate_B(list_of_imgs[i].unsqueeze(0))
 
         B_encoding = torch.cat([common, zero_encoding, separate_B], dim=1)
-        B_decoding = decoder(B_encoding)
+        B_decoding = decoder(B_encoding).detach()
         exps.append(B_decoding)
 
 
@@ -98,16 +115,18 @@ def save_imgs_explainability(args, classif, e_common, e_separate_A, e_separate_B
 
         if A:
             vutils.save_image(exps,
-                              '%s/experiments_%06d_%d-A.png' % (args.out,
+                              '%s/experiments_%06d_%d-A-%s.png' % (args.out,
                                                                    epoch,
-                                                                   k),
-                              normalize=True, nrow=k + 1)
+                                                                   k,
+                                                                   corr),
+                              normalize=True, nrow=k)
         else:
             vutils.save_image(exps,
-                              '%s/experiments_%06d_%d-B.png' % (args.out,
+                              '%s/experiments_%06d_%d-B-%s.png' % (args.out,
                                                                    epoch,
-                                                                   k),
-                              normalize=True, nrow=k + 1)
+                                                                   k,
+                                                                corr),
+                              normalize=True, nrow=k)
 
 
 def save_imgs(args, e_common, e_separate_A, e_separate_B, decoder, iters, BtoA=True, num_offsets=1):
@@ -176,16 +195,15 @@ def save_imgs(args, e_common, e_separate_A, e_separate_B, decoder, iters, BtoA=T
                               normalize=True, nrow=args.num_display + 1)
 
 
-def get_test_imgs(args):
+def get_test_imgs(args, bs = 64):
     domA_test, domB_test = get_test_dataset(args)
 
-    domA_test_loader = torch.utils.data.DataLoader(domA_test, batch_size=64,
+    domA_test_loader = torch.utils.data.DataLoader(domA_test, batch_size=bs,
                                                    shuffle=False, num_workers=6)
-    domB_test_loader = torch.utils.data.DataLoader(domB_test, batch_size=64,
+    domB_test_loader = torch.utils.data.DataLoader(domB_test, batch_size=bs,
                                                    shuffle=False, num_workers=6)
 
     for domA_img in domA_test_loader:
-        domA_img = Variable(domA_img)
         if torch.cuda.is_available():
             domA_img = domA_img.cuda()
         domA_img = domA_img.view((-1, 3, args.resize, args.resize))
@@ -193,7 +211,6 @@ def get_test_imgs(args):
         break
 
     for domB_img in domB_test_loader:
-        domB_img = Variable(domB_img)
         if torch.cuda.is_available():
             domB_img = domB_img.cuda()
         domB_img = domB_img.view((-1, 3, args.resize, args.resize))

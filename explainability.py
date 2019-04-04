@@ -8,6 +8,7 @@ import torchvision.transforms as transforms
 from utils import ImageFolder
 
 import os
+import shutil
 import argparse
 
 from models import Classifier2, Classifier, E_common, E_separate_A, E_separate_B, Decoder
@@ -43,6 +44,7 @@ parser.add_argument('--zeroweight', type=float, default=1.0)
 parser.add_argument('--reconweight', type=float, default=0.01)
 parser.add_argument('--imgdisc', type=float, default=0)  # )0.001)
 parser.add_argument('--elastic', type=int, default=0)
+parser.add_argument('--is_common', type=bool, default=False)
 args = parser.parse_args()
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -70,6 +72,8 @@ trainloaderB = torch.utils.data.DataLoader(trainB, batch_size=args.bs, shuffle=T
 testA, testB = get_test_dataset(args)
 testloaderA = torch.utils.data.DataLoader(testA, batch_size=args.bs, shuffle=False, num_workers=2)
 testloaderB = torch.utils.data.DataLoader(testB, batch_size=args.bs, shuffle=False, num_workers=2)
+
+is_common = args.is_common
 
 print(len(testA))
 print(len(trainA))
@@ -141,14 +145,18 @@ if args.resume_encoders == 'True':
 criterion = nn.CrossEntropyLoss()
 optimizer = optim.SGD(net.parameters(), lr=args.lr, momentum=0.9, weight_decay=5e-4)
 
-def train_step(inputs, targets, train_loss, total, correct, batch_idx, trainloader):
+def train_step(inputs, targets, train_loss, total, correct, batch_idx, trainloader, is_common):
     inputs, targets = inputs.to(device), targets.to(device)
     optimizer.zero_grad()
 
     if args.resume_encoders == '':
         outputs = net(inputs)
     elif args.resume_encoders == 'True':
-        common = e_common(inputs)
+        if is_common:
+            common = e_common(inputs)
+        else:
+            common = torch.full((inputs.shape[0], (512 - 2 * args.sep) * args.size * args.size), 0)
+
         A_separate = e_separate_A(inputs)
         B_separate = e_separate_B(inputs)
         encoding = torch.cat([common, A_separate, B_separate], dim=1)
@@ -180,20 +188,24 @@ def train(epoch):
     correct = 0
     total = 0
     for batch_idx, (inputsA, inputsB) in enumerate(zip(trainloaderA, trainloaderB)):
-        targetsA = torch.zeros((len(inputsA)), dtype=torch.long).to(device)
-        targetsB = torch.ones((len(inputsB)), dtype=torch.long).to(device)
+        targetsA = torch.ones((len(inputsA)), dtype=torch.long).to(device)
+        targetsB = torch.zeros((len(inputsB)), dtype=torch.long).to(device)
 
-        train_loss, total, correct = train_step(inputsA, targetsA, train_loss, total, correct, batch_idx, trainloaderA)
-        train_loss, total, correct = train_step(inputsB, targetsB, train_loss, total, correct, batch_idx, trainloaderB)
+        train_loss, total, correct = train_step(inputsA, targetsA, train_loss, total, correct, batch_idx, trainloaderA, is_common)
+        train_loss, total, correct = train_step(inputsB, targetsB, train_loss, total, correct, batch_idx, trainloaderB, is_common)
 
 
-def test_step(inputs, targets, test_loss, total, correct, batch_idx, testloader):
+def test_step(inputs, targets, test_loss, total, correct, batch_idx, testloader, is_common):
     inputs, targets = inputs.to(device), targets.to(device)
 
     if args.resume_encoders == '':
         outputs = net(inputs)
     elif args.resume_encoders == 'True':
-        common = e_common(inputs)
+        if is_common:
+            common = e_common(inputs)
+        else:
+            common = torch.full((inputs.shape()[0], (512 - 2 * args.sep) * args.size * args.size), 0)
+
         A_separate = e_separate_A(inputs)
         B_separate = e_separate_B(inputs)
         encoding = torch.cat([common, A_separate, B_separate], dim=1)
@@ -223,11 +235,11 @@ def test(epoch):
     total = 0
     with torch.no_grad():
         for batch_idx, (inputsA, inputsB) in enumerate(zip(testloaderA, testloaderB)):
-            targetsA = torch.zeros((len(inputsA)), dtype=torch.long).to(device)
-            targetsB = torch.ones((len(inputsB)), dtype=torch.long).to(device)
+            targetsA = torch.ones((len(inputsA)), dtype=torch.long).to(device)
+            targetsB = torch.zeros((len(inputsB)), dtype=torch.long).to(device)
 
-            test_loss, total, correct = test_step(inputsA, targetsA, test_loss, total, correct, batch_idx, testloaderA)
-            test_loss, total, correct = test_step(inputsB, targetsB, test_loss, total, correct, batch_idx, testloaderB)
+            test_loss, total, correct = test_step(inputsA, targetsA, test_loss, total, correct, batch_idx, testloaderA, is_common)
+            test_loss, total, correct = test_step(inputsB, targetsB, test_loss, total, correct, batch_idx, testloaderB, is_common)
 
     # Save checkpoint.
     acc = 100. * correct / total
@@ -243,8 +255,11 @@ def test(epoch):
         torch.save(state, './classifier/' + args.root + '/checkpoint/ckpt.t7')
         best_acc = acc
 
-    save_imgs_explainability(args, net, e_common, e_separate_A, e_separate_B, decoder, epoch, A=True)
-    save_imgs_explainability(args, net, e_common, e_separate_A, e_separate_B, decoder, epoch, A=True)
+    save_imgs_explainability(args, net, e_common, e_separate_A, e_separate_B, decoder, epoch, device, A=True, correct=True)
+    save_imgs_explainability(args, net, e_common, e_separate_A, e_separate_B, decoder, epoch, device, A=True, correct=False)
+
+    save_imgs_explainability(args, net, e_common, e_separate_A, e_separate_B, decoder, epoch, device, A=False, correct=True)
+    save_imgs_explainability(args, net, e_common, e_separate_A, e_separate_B, decoder, epoch, device, A=False, correct=False)
 
 
 def test_on_data(params):

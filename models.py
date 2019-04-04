@@ -85,6 +85,31 @@ class Classifier(nn.Module):
         return net
 
 
+# class ClassifierSeparates(nn.Module):
+#     def __init__(self, sepA_dim, sepB_dim):
+#         super(ClassifierSeparates, self).__init__()
+#
+#         self.sepA_dim = sepA_dim
+#         self.sepB_dim = sepB_dim
+#         self.input_dim = sepA_dim + sepB_dim
+#
+#         self.classify = nn.Sequential(
+#             nn.Linear(self.input_dim, 40),
+#             nn.LeakyReLU(0.2, inplace=True),
+#             nn.Linear(40, 20),
+#             nn.LeakyReLU(0.2, inplace=True),
+#             nn.Linear(20, 2),
+#             nn.Sigmoid()
+#         )
+#
+#
+#     def forward(self, net):
+#         net = self.classify(net)
+#         #net = net.view(-1)
+#         return net
+
+
+
 
 class E_common(nn.Module):
     def __init__(self, sep, size):
