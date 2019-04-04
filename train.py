@@ -175,7 +175,7 @@ def train(args):
                 decoder = decoder.train()
 
             if _iter % args.save_iter == 0:
-                save_file = os.path.join(args.out, 'checkpoints/checkpoint' + str(_iter))
+                save_file = os.path.join(args.out_checkpoint, 'checkpoints/checkpoint' + str(_iter))
                 save_model(save_file, e_common, e_separate_A, e_separate_B, decoder, ae_optimizer, disc,
                            disc_optimizer, _iter)
 
@@ -186,6 +186,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--root', default='')
     parser.add_argument('--out', default='out')
+    parser.add_argument('--out_checkpoint', default='')
     parser.add_argument('--lr', type=float, default=0.0002)
     parser.add_argument('--bs', type=int, default=32)
     parser.add_argument('--iters', type=int, default=1250000)
