@@ -51,3 +51,14 @@ Run ```eval.py```. You can use the following example to run:
 ```
 python eval.py --root ./smile_glasses --out ./smile_glasses_eval --sep 25 --num_display 10
 ```
+
+## Reference
+If you found this code useful, please cite the following paper:
+```
+@inproceedings{Benaim2019DomainIntersectionDifference,
+  title={Domain Intersection and Domain Difference},
+  author={Sagie Benaim and Michael Khaitov and Tomer Galanti and Lior Wolf},
+  booktitle={ICCV},
+  year={2019}
+}
+```
